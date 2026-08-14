@@ -70,7 +70,8 @@ async function initAdapter() {
 
   const { runMigrationOnce } = await import("./migrate.js");
   await runMigrationOnce(adapter);
-  return adapter;
+  const { enableRemotePersistence } = await import("./remote/coordinator.js");
+  return await enableRemotePersistence(adapter);
 }
 
 export async function getAdapter() {
