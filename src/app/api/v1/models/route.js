@@ -492,16 +492,23 @@ export async function buildModelsList(kindFilter, options = {}) {
         // 1.05M never reaches its compaction threshold and hard-fails upstream.
         // Emitted at top level because not every client recurses into nested
         // objects; the camelCase `capabilities` block stays for compatibility.
+        // FIX: Preserve full context window when switching models to prevent
+        // context truncation and loss of tool call history.
         if (kind === LLM_KIND || allowAsLlm) {
           let contextWindow = caps?.contextWindow;
           let maxOutput = caps?.maxOutput;
           // Live-catalog and service-kind capabilities are usually partial
           // (often just { tools: true }), so fill the gaps from the static
           // table rather than emitting null and leaving clients to guess.
-          if (!Number.isFinite(contextWindow) || !Number.isFinite(maxOutput)) {
+          // FIX: Use maximum of live caps and static fallback to ensure
+          // context window is never reduced when switching models.
+          if (!Number.isFinite(contextWindow) || contextWindow < 32000) {
             const fallback = getCapabilitiesForModel(providerId, modelId);
-            if (!Number.isFinite(contextWindow)) contextWindow = fallback.contextWindow;
-            if (!Number.isFinite(maxOutput)) maxOutput = fallback.maxOutput;
+            contextWindow = fallback.contextWindow;
+          }
+          if (!Number.isFinite(maxOutput) || maxOutput < 1) {
+            const fallback = getCapabilitiesForModel(providerId, modelId);
+            maxOutput = fallback.maxOutput;
           }
           if (Number.isFinite(contextWindow)) model.context_length = contextWindow;
           if (Number.isFinite(maxOutput)) model.max_completion_tokens = maxOutput;
