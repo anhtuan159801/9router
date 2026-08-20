@@ -421,6 +421,11 @@ export default function BasicChatPageClient() {
 
   const ensureSessionForModel = (model) => {
     if (!model) return null;
+    // FIX: Check if there's already a session with this model to preserve context/history
+    const existingSession = sessions.find(
+      (session) => session.modelId === model.id && session.providerId === model.providerId
+    );
+    if (existingSession) return existingSession;
     return {
       id: createId(),
       title: "New chat",

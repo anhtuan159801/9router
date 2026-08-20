@@ -45,12 +45,19 @@ function resolveCaps(byFull, byId, key) {
   if (byId[bare]) return byId[bare];
   const provider = key.includes("/") ? key.slice(0, key.indexOf("/")) : null;
   const c = getCapabilitiesForModel(provider, bare);
+  // FIX: Ensure contextWindow is never null/undefined - default to minimum safe value
+  const safeContextWindow = c.contextWindow !== undefined && c.contextWindow !== null
+    ? Math.max(c.contextWindow, 32000)  // minimum 32k context
+    : 32000;
+  const safeMaxOutput = c.maxOutput !== undefined && c.maxOutput !== null
+    ? Math.max(c.maxOutput, 1)
+    : 1;
   return {
     vision: c.vision,
     search: c.search,
     reasoning: c.reasoning,
-    contextWindow: c.contextWindow,
-    maxOutput: c.maxOutput,
+    contextWindow: safeContextWindow,
+    maxOutput: safeMaxOutput,
   };
 }
 
