@@ -19,6 +19,22 @@ docker run -d \
 
 App listens on port `20128`. Open: http://localhost:20128
 
+## Deploy on Koyeb
+
+The image uses port `20128` by default, but the server also honors Koyeb's
+`PORT` environment variable. Configure the Koyeb Web Service as follows:
+
+1. In **Exposed ports**, expose `20128` as a public `HTTP` port and route `/` to
+   it (recommended), or keep port `8000` and set `PORT=8000`.
+2. Remove any manually configured `PORT=20128` if the exposed port is `8000`.
+   The exposed port and `PORT` value must be identical.
+3. Optionally configure an HTTP health check on `GET /api/health`. It returns
+   `{"ok":true}` without authentication or provider credentials.
+
+Koyeb Web Services provide `PORT` automatically. Do not hardcode a different
+`PORT` value in the Service environment. After changing the port or environment
+variables, redeploy the Service.
+
 ## Manage container
 
 ```bash

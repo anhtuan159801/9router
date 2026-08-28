@@ -5,6 +5,25 @@ const crypto = require("crypto");
 const { pathToFileURL } = require("url");
 
 const origCreate = http.createServer.bind(http);
+const DEFAULT_PORT = "20128";
+const KOYEB_PORT_ENV_PATTERN = /^KOYEB_PORT_(\d+)_PROTOCOL$/;
+
+function getKoyebExposedPorts(env = process.env) {
+  return [...new Set(Object.keys(env)
+    .map((key) => key.match(KOYEB_PORT_ENV_PATTERN)?.[1])
+    .filter((port) => port && Number(port) > 0 && Number(port) < 65536))];
+}
+
+function applyRuntimeDefaults(env = process.env) {
+  const koyebPorts = getKoyebExposedPorts(env);
+  // Koyeb's single exposed port is authoritative. This also repairs a stale
+  // image/service PORT value that would otherwise make the health check probe
+  // a different port from the one used by the process.
+  if (koyebPorts.length === 1) env.PORT = koyebPorts[0];
+  else if (!env.PORT || !String(env.PORT).trim()) env.PORT = DEFAULT_PORT;
+  if (!env.HOSTNAME) env.HOSTNAME = "0.0.0.0";
+  return env;
+}
 
 // Per-process secret proving x-9r-real-ip was stamped below rather than sent by the client.
 // A bare `next start` / `next dev` never loads this file, so it cannot produce a matching
@@ -126,6 +145,7 @@ http.createServer = (...args) => {
 };
 
 if (require.main === module) {
+  applyRuntimeDefaults();
   const standalone = path.join(__dirname, "server.js");
   if (fs.existsSync(standalone)) {
     require(standalone);
@@ -137,3 +157,11 @@ if (require.main === module) {
     require(nextBin);
   }
 }
+
+module.exports = {
+  __test__: {
+    applyRuntimeDefaults,
+    getKoyebExposedPorts,
+    DEFAULT_PORT,
+  },
+};
