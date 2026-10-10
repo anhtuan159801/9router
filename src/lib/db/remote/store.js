@@ -18,7 +18,15 @@ function describeRemoteError(error) {
     .map((entry) => entry?.message)
     .reverse()
     .find((cause) => cause && (!message || (!message.includes(cause) && !cause.includes(message))));
-  const details = [code, name, message, causeMessage]
+  // postgrest-js serializes fetch failures into a plain error object and puts
+  // the native fetch cause in `details` instead of preserving it as `cause`.
+  // Keep only that summary line; the rest of `details` can contain a stack.
+  const serializedCause = chain
+    .map((entry) => entry?.details)
+    .find((value) => typeof value === "string" && /(?:^|\n)\s*Caused by:/i.test(value))
+    ?.match(/(?:^|\n)\s*Caused by:\s*([^\r\n]+)/i)?.[1];
+  const deepestCause = causeMessage || serializedCause;
+  const details = [code, name, message, deepestCause]
     .filter((value) => value !== null && value !== undefined && String(value).trim())
     .map((value) => String(value).trim());
   return [...new Set(details)].join(": ") || "no error details returned";

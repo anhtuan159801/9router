@@ -23,6 +23,11 @@ resolving the remote snapshot fetch failure reported as
   does not log it. The login page displays that response's `error` field, so the
   precise infrastructure cause can be captured from the page or the
   `/api/auth/login` network response after the diagnostic changes are deployed.
+- After deploying the first diagnostic change, the runtime message changed to
+  `Remote persistence] fetch failed (TypeError: fetch failed)`. Supabase's
+  PostgREST client puts the native fetch cause in the returned error's
+  `details` string, while the first formatter only followed `.cause`; the next
+  change extracts the `Caused by:` line from `details` and omits stack traces.
 
 ## Requirements
 

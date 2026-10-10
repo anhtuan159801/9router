@@ -68,9 +68,10 @@ Questions to answer:
   failure remains fail-closed; never silently serve a possibly stale local
   configuration.
 - Format store errors with available PostgREST code, error name, message, and
-  the deepest distinct `cause.message`. Preserve the original error as
-  `cause`; do not replace transport failures with `(unknown)` when nested
-  details exist.
+  the deepest distinct `cause.message`. Supabase may serialize native fetch
+  causes into `error.details`; when present, include only its `Caused by:`
+  summary line and omit the stack. Preserve the original error as `cause`; do
+  not replace transport failures with `(unknown)` when nested details exist.
 - `POST /api/auth/login` returns a caught `getSettings()` error as the HTTP
   500 response's `error` field and does not log it. Keep formatted details
   free of secrets; use the login response or UI for diagnosis instead of
