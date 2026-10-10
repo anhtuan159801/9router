@@ -75,12 +75,33 @@ async function initAdapter() {
   const { runMigrationOnce } = await import("./migrate.js");
   await runMigrationOnce(adapter);
   const { enableRemotePersistence } = await import("./remote/coordinator.js");
-  return await enableRemotePersistence(adapter);
+  try {
+    return await enableRemotePersistence(adapter);
+  } catch (error) {
+    try {
+      await adapter.close?.();
+    } catch (closeError) {
+      console.warn(`[DB] failed to close adapter after initialization error: ${closeError.message}`);
+    }
+    throw error;
+  }
 }
 
 export async function getAdapter() {
   if (state.instance) return state.instance;
-  if (!state.initPromise) state.initPromise = initAdapter().then((a) => { state.instance = a; return a; });
+  if (!state.initPromise) {
+    state.initPromise = initAdapter()
+      .then((adapter) => {
+        state.instance = adapter;
+        return adapter;
+      })
+      .catch((error) => {
+        // A transient remote snapshot fetch failure must not poison every
+        // later request in this process with the same rejected promise.
+        state.initPromise = null;
+        throw error;
+      });
+  }
   return state.initPromise;
 }
 

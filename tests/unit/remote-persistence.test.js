@@ -4,6 +4,7 @@ import { readRemoteConfig } from "../../src/lib/db/remote/config.js";
 import { decryptSnapshot, encryptSnapshot } from "../../src/lib/db/remote/crypto.js";
 import { enableRemotePersistence } from "../../src/lib/db/remote/coordinator.js";
 import { exportConfigSnapshot, importConfigSnapshot, isConfigMutation } from "../../src/lib/db/remote/snapshot.js";
+import { createSnapshotStore } from "../../src/lib/db/remote/store.js";
 
 function memoryAdapter(seed = {}) {
   const tables = {
@@ -61,6 +62,25 @@ describe("encrypted snapshots", () => {
     expect(() => decryptSnapshot(encrypted.ciphertext, encrypted.checksum, randomBytes(32))).toThrow(/authentication/);
     expect(() => decryptSnapshot(encrypted.ciphertext, `${encrypted.checksum}x`, config.encryptionKey)).toThrow(/checksum/);
     expect(() => decryptSnapshot("not base64!", encrypted.checksum, config.encryptionKey)).toThrow(/encoding/);
+  });
+});
+
+describe("snapshot store errors", () => {
+  it("includes the transport cause when a Supabase fetch has no PostgREST code", async () => {
+    const networkCause = Object.assign(new Error("getaddrinfo ENOTFOUND supabase.example"), { code: "ENOTFOUND" });
+    const fetchCause = new TypeError("fetch failed", { cause: networkCause });
+    const error = Object.assign(new Error("TypeError: fetch failed", { cause: fetchCause }), { name: "FetchError" });
+    const query = { maybeSingle: vi.fn().mockResolvedValue({ data: null, error }) };
+    const client = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({ eq: vi.fn(() => query) })),
+      })),
+    };
+    const store = createSnapshotStore(config, () => client);
+
+    await expect(store.load()).rejects.toThrow(
+      "fetch failed (ENOTFOUND: FetchError: TypeError: fetch failed: getaddrinfo ENOTFOUND supabase.example)"
+    );
   });
 });
 

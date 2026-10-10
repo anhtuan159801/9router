@@ -35,7 +35,7 @@ If Supabase is empty, the first startup seeds it from the current local database
 
 ## Failure and rollback behavior
 
-With all sync variables absent, original local-only behavior is unchanged. Partial configuration or any fetch, authentication, schema, checksum, decryption, or restore failure stops startup. Runtime upload errors retain the last valid revision and retry; logs use the `[Remote persistence]` prefix without printing secrets or snapshot contents.
+With all sync variables absent, original local-only behavior is unchanged. Partial configuration or any fetch, authentication, schema, checksum, decryption, or restore failure stops database initialization. The local adapter is closed and the failed initialization is cleared, so a later database-backed request can retry. Fetch errors include available PostgREST and nested network-cause details instead of only reporting `unknown`. Runtime upload errors retain the last valid revision and retry; logs use the `[Remote persistence]` prefix without printing secrets or snapshot contents.
 
 To disable synchronization, preserve a safe local database copy, remove all Supabase sync variables, and redeploy. Remote data is not deleted. Encryption-key rotation is manual: retain a trusted local database, remove or rename the old snapshot row, deploy with the new key, and seed a new snapshot.
 
