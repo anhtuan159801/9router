@@ -533,6 +533,37 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     return result;
   }
 
+  // Upstream answered with a complete JSON body instead of SSE. This is the
+  // normal OpenAI behaviour when the forwarded request carried no `stream`
+  // flag: the client omitted `stream` (9Router's internal default is
+  // "streaming"), the openai→openai body is passed through as-is, and the
+  // provider replies with a single JSON object. Piping that JSON through the
+  // SSE transform appends the `data: [DONE]` sentinel to it, producing a body
+  // that is neither valid JSON nor valid SSE ("non-JSON response" in strict
+  // clients). Route it through the non-streaming handler instead.
+  const upstreamCT = (providerResponse.headers.get("content-type") || "").toLowerCase();
+  if (stream && !upstreamCT.includes("text/event-stream")) {
+    const rawUpstream = await providerResponse.text().catch(() => "");
+    const trimmedUpstream = rawUpstream.trimStart();
+    if (trimmedUpstream.startsWith("{")) {
+      const jsonResponse = new Response(rawUpstream, {
+        status: providerResponse.status,
+        statusText: providerResponse.statusText,
+        headers: providerResponse.headers,
+      });
+      const result = await handleNonStreamingResponse({ ...sharedCtx, providerResponse: jsonResponse, sourceFormat, targetFormat: providerResponseFormat, reqLogger, toolNameMap, customToolNames, trackDone, appendLog });
+      streamController.handleComplete();
+      return result;
+    }
+    // Not JSON after all (SSE with a wrong/missing content-type) — restore
+    // the wire and let the streaming path consume it as before.
+    providerResponse = new Response(rawUpstream, {
+      status: providerResponse.status,
+      statusText: providerResponse.statusText,
+      headers: providerResponse.headers,
+    });
+  }
+
   // Streaming response
   const { onStreamComplete, streamDetailId } = buildOnStreamComplete({ ...sharedCtx });
   return handleStreamingResponse({ ...sharedCtx, providerResponse, sourceFormat, targetFormat: providerResponseFormat, userAgent, reqLogger, toolNameMap, customToolNames, streamController, onStreamComplete, streamDetailId, credentials });
