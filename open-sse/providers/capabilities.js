@@ -260,6 +260,15 @@ export const PROVIDER_CAPABILITIES = {
     "deepseek-ai/deepseek-v4-pro": { tools: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 65536 },
     "deepseek-ai/deepseek-v4-flash": { tools: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 65536 },
   },
+  // Agnes AI — OpenAI-compatible gateway. Long-context models; flash variants
+  // default to openai reasoning format. Limits follow the Agnes docs:
+  // https://wiki.agnes-ai.com/en/docs/agnes-25-flash.md
+  "agnes": {
+    "agnes-2.5-flash": { tools: true, reasoning: true, vision: true, imageToText: true, pdf: true, thinkingFormat: "openai", contextWindow: 512000, maxOutput: 65536 },
+    "agnes-2.5-pro": { tools: true, reasoning: true, vision: true, imageToText: true, pdf: true, thinkingFormat: "openai", contextWindow: 512000, maxOutput: 131072 },
+    "agnes-2.5-pro-beta": { tools: true, reasoning: true, vision: true, imageToText: true, pdf: true, thinkingFormat: "openai", contextWindow: 512000, maxOutput: 131072 },
+    "agnes-3.0-flash": { tools: true, reasoning: true, vision: true, imageToText: true, pdf: true, thinkingFormat: "openai", contextWindow: 512000, maxOutput: 65536 },
+  },
   // glm-5.3-flash on OpenCode Go is served by a backend that rejects the z.ai
   // `thinking` object (400: unknown field "thinking") and wants reasoning_effort.
   // Overrides the global entry, whose z.ai shape is correct for z.ai itself.

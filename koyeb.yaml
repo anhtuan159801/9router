@@ -1,0 +1,58 @@
+name: 9router
+services:
+  - name: web
+    # Dùng image chính thức trên Docker Hub. Nếu bạn build image riêng,
+    # thay dòng dưới bằng: image: YOUR_DOCKERHUB_USERNAME/9router:latest
+    image: decolua/9router:latest
+    ports:
+      - port: 20128
+        protocol: http
+        routes:
+          - path: /
+    env:
+      - name: PORT
+        value: "20128"
+      - name: HOSTNAME
+        value: "0.0.0.0"
+      - name: NODE_ENV
+        value: "production"
+      - name: DATA_DIR
+        value: "/app/data"
+      # --- Bắt buộc: bạn hãy thay giá trị sau cho an toàn ---
+      - name: JWT_SECRET
+        value: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET"
+      - name: INITIAL_PASSWORD
+        value: "123456789"
+      # --- Khuyên dùng ---
+      - name: API_KEY_SECRET
+        value: "endpoint-proxy-api-key-secret"
+      - name: MACHINE_ID_SALT
+        value: "endpoint-proxy-salt"
+      - name: BASE_URL
+        value: "https://9router.koyeb.app"   # <-- Thay bằng domain Koyeb thực tế sau khi tạo app
+      - name: NEXT_PUBLIC_BASE_URL
+        value: "https://9router.koyeb.app"    # <-- Thay bằng domain Koyeb thực tế sau khi tạo app
+      - name: CLOUD_URL
+        value: "https://9router.com"
+      - name: ENABLE_REQUEST_LOGS
+        value: "false"
+      - name: OBSERVABILITY_ENABLED
+        value: "true"
+      - name: AUTH_COOKIE_SECURE
+        value: "false"
+      - name: REQUIRE_API_KEY
+        value: "false"
+    healthcheck:
+      http:
+        path: /api/health
+        port: 20128
+        interval: 10s
+        timeout: 5s
+        retries: 3
+    # Tùy chọn: gói instance. Free tier thường dùng "nano".
+    instance_type: free
+    # Nếu bạn muốn lưu dữ liệu SQLite bền vững (không mất khi restart),
+    # hãy tạo Volume trên Koyeb rồi uncomment phần dưới:
+    # volumes:
+    #   - name: 9router-data
+    #     mount_path: /app/data

@@ -23,6 +23,18 @@ export default {
     baseUrl: "https://apihub.agnes-ai.com/v1/chat/completions",
     validateUrl: "https://apihub.agnes-ai.com/v1/models",
   },
+  serviceKinds: ["llm", "image", "imageToText", "video"],
+  imageConfig: {
+    baseUrl: "https://apihub.agnes-ai.com/v1/images/generations",
+  },
+  // Async video jobs — OpenAI Videos-compatible. Create: POST /v1/videos
+  // (handled by the agnes adapter, which also drives the non-standard
+  // retrieval endpoint GET /agnesapi?video_id=<id>). Docs:
+  // https://wiki.agnes-ai.com/en/docs/agnes-video-25
+  videoConfig: {
+    baseUrl: "https://apihub.agnes-ai.com/v1",
+    retrieval: { baseUrl: "https://apihub.agnes-ai.com/agnesapi" },
+  },
   // Seeds so the dashboard has something to show before a key is saved and
   // /v1/models answers with a usable list. The live catalogue at
   // apihub.agnes-ai.com/v1/models requires a token (401 "Token not provided"),
@@ -33,6 +45,9 @@ export default {
     { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro" },
     { id: "agnes-2.5-pro-beta", name: "Agnes 2.5 Pro Beta" },
     { id: "agnes-3.0-flash", name: "Agnes 3.0 Flash" },
+    { id: "agnes-image-2.5-flash", name: "Agnes Image 2.5 Flash", kind: "image" },
+    { id: "agnes-video-2.5", name: "Agnes Video 2.5", params: ["seconds", "size", "aspect_ratio"], kind: "video" },
+    { id: "agnes-video-2.5-flash", name: "Agnes Video 2.5 Flash", params: ["seconds", "size", "aspect_ratio"], kind: "video" },
   ],
   passthroughModels: true,
 };
